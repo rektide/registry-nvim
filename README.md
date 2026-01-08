@@ -122,6 +122,49 @@ listen_registery = {
 }
 ```
 
+## Discovery
+
+registry-nvim uses **self-registration** to discover listen servers. Each Neovim instance registers itself when it starts, rather than actively scanning the system for running instances.
+
+### How Discovery Works
+
+**1. Initial Socket Detection / Registration**
+
+- Called once during plugin setup to ensure the current instance is tracked immediately
+- The plugin reads the current instance's listen server path from `vim.v.servername`
+- This contains the path to the Unix domain socket (e.g., `/run/user/1000/nvim.12345.sock`)
+- Only Neovim instances with listen servers are tracked
+
+**2. Autocmd Triggers**
+
+- **VimEnter**: Registers the current instance on startup (scheduled to run after full initialization)
+- **User RemoteConnected**: Re-registers when a remote client connects to this instance
+
+### Important Notes
+
+- **Requires Plugin Installation**: Each Neovim instance must have registry-nvim installed to be discovered
+- **No Active Scanning**: The plugin doesn't scan filesystems or monitor socket directories
+- **Accumulative Registry**: The registry builds up over time as instances start and stop
+- **Cleanup Required**: Stale sockets remain in the registry until manually cleaned via `:RegistryCleanup`
+
+### Discovery Flow
+
+```
+Neovim starts → registry-nvim loads → reads vim.v.servername
+→ adds to neoconf registry → persists across sessions
+```
+
+### What's Not Implemented
+
+The following discovery mechanisms are **not** implemented:
+
+- Filesystem scanning for socket files
+- IPC discovery of other Neovim instances
+- Directory monitoring for new sockets
+- Network-level discovery
+
+The current approach is simple, reliable, and requires minimal overhead, but depends on each Neovim instance having the plugin installed.
+
 ## Requirements
 
 - Neovim >= 0.9.0
@@ -178,6 +221,7 @@ cat file.txt | ./scripts/registry-send
 ```
 
 **CLI Dependencies:**
+
 - `jq` - For parsing neoconf JSON
 - `nvim` - For server communication
 
