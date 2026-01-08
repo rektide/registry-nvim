@@ -6,18 +6,18 @@ Track all Neovim listen servers across all instances.
 
 - Automatically discover and track listen servers across all Neovim instances
 - Uses `neoconf` to maintain a global registry of active listen servers
-- Cleanup capability to remove stale/invalid listen sockets
+- Automatic cleanup of stale listen sockets when new instances register
 - Modular architecture with sensible file organization
 - Built-in healthcheck for diagnostics
 - Comprehensive help documentation
 
 ## Usage
 
-The plugin automatically monitors and updates the listen registry. By default, listen servers are tracked in the global `neoconf` settings under the `listen-registery` property.
+The plugin automatically monitors and updates the listen registry. By default, listen servers are tracked in the global `neoconf` settings under the `listen-registery` property. The registry is automatically cleaned when new instances register themselves.
 
 ### Manual Commands
 
-- `:RegistryCleanup` - Clean up stale listen sockets from the registry
+- `:RegistryCleanup` - Manually clean up stale listen sockets from the registry
 
 ### Programmatic Usage
 
@@ -63,6 +63,9 @@ xclip -o | ./scripts/registry-send
 **Automated cleanup:**
 
 ```lua
+-- Manual cleanup (rarely needed - cleanup runs automatically)
+:RegistryCleanup
+
 -- Add periodic cleanup to your config
 vim.api.nvim_create_autocmd("User", {
   pattern = "RegistryCleanup",
@@ -70,9 +73,6 @@ vim.api.nvim_create_autocmd("User", {
     require("registry-nvim").cleanup()
   end,
 })
-
--- Manually trigger via:
-:RegistryCleanup
 ```
 
 **Custom monitoring control:**
@@ -145,7 +145,7 @@ registry-nvim uses **self-registration** to discover listen servers. Each Neovim
 - **Requires Plugin Installation**: Each Neovim instance must have registry-nvim installed to be discovered
 - **No Active Scanning**: The plugin doesn't scan filesystems or monitor socket directories
 - **Accumulative Registry**: The registry builds up over time as instances start and stop
-- **Cleanup Required**: Stale sockets remain in the registry until manually cleaned via `:RegistryCleanup`
+- **Automatic Cleanup**: Stale sockets are removed automatically when new instances register themselves
 
 ### Discovery Flow
 
