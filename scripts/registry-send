@@ -1,0 +1,107 @@
+#!/usr/bin/env -S bash
+
+set -e
+
+REGISTER='"*'
+ENV_GUARD=""
+CONTENT=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -r|--register)
+      REGISTER="$2"
+      if [[ ! "$REGISTER" =~ ^\" ]]; then
+        REGISTER="\"$REGISTER\""
+      fi
+      shift 2
+      ;;
+    -e|--env-guard)
+      ENV_GUARD="$2"
+      shift 2
+      ;;
+    -h|--help)
+      cat <<'EOF'
+Usage: registry-send [OPTIONS]
+
+Send stdin content to all Neovim sessions in the registry.
+
+Options:
+  -r, --register NAME    Set to specified register (default: clipboard *)
+  -e, --env-guard VAR    Only run if VAR=VALUE environment matches
+  -h, --help             Show this help message
+
+Examples:
+  echo "hello" | registry-send
+  echo "world" | registry-send -r a
+  echo "test" | registry-send -e CLIPBOARD_STATE=enabled
+EOF
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -n "$ENV_GUARD" ]]; then
+  IFS='=' read -r NAME VALUE <<< "$ENV_GUARD"
+  if [[ "$NAME" == "" || "$VALUE" == "" ]]; then
+    echo "Invalid env-guard format. Expected NAME=VALUE" >&2
+    exit 1
+  fi
+  ACTUAL_VALUE="${!NAME}"
+  if [[ "$ACTUAL_VALUE" == "" ]]; then
+    echo "Environment variable $NAME not found" >&2
+    exit 1
+  fi
+  if [[ "$ACTUAL_VALUE" != "$VALUE" ]]; then
+    echo "Environment variable $NAME: expected '$VALUE', got '$ACTUAL_VALUE'" >&2
+    exit 1
+  fi
+fi
+
+CONTENT=$(cat)
+if [[ -z "$CONTENT" ]]; then
+  echo "No content read from stdin" >&2
+  exit 1
+fi
+
+CONFIG_PATH="${HOME}/.config/nvim/neoconf.json"
+if [[ ! -f "$CONFIG_PATH" ]]; then
+  echo "Could not read neoconf config from $CONFIG_PATH" >&2
+  exit 1
+fi
+
+REGISTRY=$(jq -r '.listen_registery[] // empty' "$CONFIG_PATH" 2>/dev/null || echo "")
+if [[ -z "$REGISTRY" ]]; then
+  echo "No listen sockets found in registry" >&2
+  exit 1
+fi
+
+SUCCESS=0
+FAILED=0
+
+while IFS= read -r SOCKET; do
+  if [[ -z "$SOCKET" ]]; then
+    continue
+  fi
+
+  if nvim --server "$SOCKET" --remote-send "<Esc>:call setreg($REGISTER, '$(echo "$CONTENT" | sed "s/'/'\\\\''/g")')<CR>" 2>/dev/null; then
+    echo "✓ $SOCKET"
+    ((SUCCESS++))
+  else
+    echo "✗ $SOCKET: failed to send"
+    ((FAILED++))
+  fi
+done <<< "$REGISTRY"
+
+echo ""
+echo "Sent to $SUCCESS session(s), $FAILED failed"
+
+if [[ $FAILED -gt 0 ]]; then
+  exit 1
+fi
+
+exit 0
