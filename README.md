@@ -19,6 +19,74 @@ The plugin automatically monitors and updates the listen registry. By default, l
 
 - `:RegistryCleanup` - Clean up stale listen sockets from the registry
 
+### Programmatic Usage
+
+```lua
+local registry = require("registry-nvim")
+
+-- Get all registered sockets
+local sockets = registry.get_all()
+
+-- Add a socket manually
+registry.add("/tmp/nvim.sock")
+
+-- Remove a socket manually
+registry.remove("/tmp/nvim.sock")
+
+-- Check if a socket is registered
+if registry.contains("/tmp/nvim.sock") then
+  print("Socket is registered")
+end
+
+-- Get count of registered sockets
+local count = registry.count()
+
+-- Clear all sockets
+registry.clear()
+
+-- Manually trigger cleanup
+registry.cleanup()
+```
+
+### Advanced Workflows
+
+**Sync clipboard from terminal:**
+
+```bash
+# Copy to all Neovim instances
+pbpaste | ./scripts/registry-send
+
+# Or with xclip on Linux
+xclip -o | ./scripts/registry-send
+```
+
+**Automated cleanup:**
+
+```lua
+-- Add periodic cleanup to your config
+vim.api.nvim_create_autocmd("User", {
+  pattern = "RegistryCleanup",
+  callback = function()
+    require("registry-nvim").cleanup()
+  end,
+})
+
+-- Manually trigger via:
+:RegistryCleanup
+```
+
+**Custom monitoring control:**
+
+```lua
+-- Stop monitoring temporarily
+require("registry-nvim").stop_monitor()
+
+-- Do some work...
+
+-- Restart monitoring
+require("registry-nvim").start_monitor()
+```
+
 ## Configuration
 
 The plugin uses `neoconf` for configuration. The listen registry is stored in global settings:
@@ -28,6 +96,29 @@ The plugin uses `neoconf` for configuration. The listen registry is stored in gl
 listen_registery = {
   "/tmp/nvim.sock",
   "/run/user/1000/nvim.1234.sock"
+}
+```
+
+### Lazy.nvim Configuration Example
+
+```lua
+{
+  'yourusername/registry-nvim',
+  dependencies = {
+    'folke/neoconf.nvim',
+    'nvim-lua/plenary.nvim',
+  },
+  config = function()
+    local registry = require('registry-nvim')
+
+    -- Basic setup
+    registry.setup()
+
+    -- Or with manual control of monitoring
+    registry.setup()
+    -- Later in your config:
+    registry.start_monitor()
+  end,
 }
 ```
 
@@ -66,6 +157,29 @@ The plugin is organized into modular components:
 - `init.lua` - Plugin initialization
 
 ## Development
+
+### CLI Tool
+
+The `scripts/registry-send` script allows you to send content to all registered Neovim instances:
+
+```bash
+# Send text to all sessions' clipboard
+echo "Hello from terminal" | ./scripts/registry-send
+
+# Send to a specific register
+echo "Important text" | ./scripts/registry-send -r +
+
+# Only send if an environment guard matches
+export CLIPBOARD_STATE=enabled
+echo "Sensitive data" | ./scripts/registry-send -e CLIPBOARD_STATE=enabled
+
+# Use in shell scripts for clipboard synchronization
+cat file.txt | ./scripts/registry-send
+```
+
+**CLI Dependencies:**
+- `jq` - For parsing neoconf JSON
+- `nvim` - For server communication
 
 ### Healthcheck
 
