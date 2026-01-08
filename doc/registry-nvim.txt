@@ -1,0 +1,130 @@
+*registry-nvim.txt*	Track all Neovim listen servers across all instances
+
+Author:  registry-nvim contributors
+License: MIT License
+
+==============================================================================
+INTRODUCTION                                         *registry-nvim-introduction*
+
+registry-nvim automatically discovers and tracks listen servers across all
+Neovim instances using neoconf.nvim. The plugin maintains a global registry
+of active listen servers, allowing for multi-instance Neovim workflows.
+
+==============================================================================
+REQUIREMENTS                                       *registry-nvim-requirements*
+
+- Neovim >= 0.9.0
+- neoconf.nvim (required)
+- plenary.nvim (optional, for cleanup functionality)
+
+==============================================================================
+INSTALLATION                                       *registry-nvim-installation*
+
+Using lazy.nvim: >
+
+    {
+      'yourusername/registry-nvim',
+      dependencies = {
+        'folke/neoconf.nvim',
+        'nvim-lua/plenary.nvim',
+      },
+      config = function()
+        require('registry-nvim').setup()
+      end,
+    }
+<
+
+==============================================================================
+COMMANDS                                            *registry-nvim-commands*
+
+                                                        *:RegistryCleanup*
+:RegistryCleanup~
+    Clean up stale listen sockets from the registry. This command checks the
+    validity of all registered sockets and removes those that no longer
+    exist or are not valid socket files.
+
+    Example: >
+        :RegistryCleanup
+<
+
+==============================================================================
+CONFIGURATION                                 *registry-nvim-configuration*
+
+The plugin uses neoconf.nvim for configuration. The listen registry is
+stored in global neoconf settings under the `listen_registery` key.
+
+Registry Format: >
+    {
+        listen_registery = {
+            "/tmp/nvim.sock",
+            "/run/user/1000/nvim.1234.sock"
+        }
+    }
+<
+
+==============================================================================
+API                                                  *registry-nvim-api*
+
+The plugin provides a Lua API for programmatic access:
+
+setup(opts)                                             *registry-nvim.setup()*
+    Initialize the plugin. Should be called once during plugin setup.
+
+    Parameters: ~
+        {opts} (table, optional) Configuration options (currently unused)
+
+    Returns: ~
+        The plugin module for method chaining
+
+start_monitor()                                     *registry-nvim.start_monitor()*
+    Start automatic listen server monitoring. This is called automatically
+    during setup, but can be called manually if monitoring was stopped.
+
+stop_monitor()                                      *registry-nvim.stop_monitor()*
+    Stop automatic listen server monitoring.
+
+cleanup()                                               *registry-nvim.cleanup()*
+    Manually trigger registry cleanup. Same as the :RegistryCleanup command.
+
+    Returns: ~
+        true if cleanup started successfully, false otherwise
+
+==============================================================================
+HEALTHCHECK                                      *registry-nvim-healthcheck*
+
+Run the healthcheck to verify plugin status and diagnostics: >
+
+    :checkhealth registry-nvim
+<
+
+The healthcheck verifies:
+- neoconf.nvim availability
+- plenary.nvim availability
+- Registry status and integrity
+- Current instance listen server status
+
+==============================================================================
+ARCHITECTURE                                     *registry-nvim-architecture*
+
+The plugin is organized into modular components:
+
+init.lua           Main entry point and public API
+config.lua         Configuration management with neoconf integration
+registry.lua       Main registry module providing high-level API
+monitor.lua        Listen server discovery and monitoring
+cleanup.lua        Async socket validation and cleanup
+health.lua         Neovim healthcheck diagnostics
+
+==============================================================================
+TROUBLESHOOTING                               *registry-nvim-troubleshooting*
+
+Registry is empty after setup~
+    This is normal if no Neovim instances have listen servers yet. As you
+    start Neovim instances with listen servers, they will be automatically
+    registered.
+
+Cleanup command fails~
+    If cleanup fails, check that plenary.nvim is installed. Run
+    :checkhealth registry-nvim for diagnostics.
+
+================================================================ vim:tw=78:ts=8:ft=help:norl:
