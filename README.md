@@ -5,12 +5,10 @@ registry-nvim helps you coordinate multiple Neovim instances by automatically tr
 ## Features
 
 - **Automatic Discovery & Tracking**
-  - Automatically discovers all Neovim instances with listen servers
-  - Self-registration model where each instance adds itself to the registry
-  - Works across all Neovim instances on your system
+  - Automatically discovers / self-reports all Neovim instances with listen servers
 
 - **Global Registry via neoconf**
-  - Uses neoconf.nvim to maintain a persistent, global registry
+  - Uses `neoconf.nvim` to maintain a persistent, global registry
   - Registry stored under `listen_registery` key in global settings
   - Shared across all Neovim instances with plugin installed
 
@@ -44,6 +42,7 @@ The plugin requires these external libraries:
 The `scripts/registry-send` script sends content from stdin to all Neovim instances in the registry. This is useful for synchronizing clipboard data, sending commands, or distributing content across all your Neovim sessions.
 
 **CLI Dependencies:**
+
 - `jq` - For parsing neoconf JSON configuration
 - `nvim` - For server communication with Neovim instances
 
