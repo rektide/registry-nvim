@@ -1,6 +1,8 @@
 # registry-nvim
 
-registry-nvim helps you coordinate multiple Neovim instances by automatically tracking all listen servers. This enables workflows where you need to send commands, content, or data to every running Neovim session from the command line or external tools. Common use cases include synchronizing clipboard content across all Neovim instances, executing bulk operations, or coordinating editor state from shell scripts.
+`registry-nvim` helps you coordinate multiple Neovim instances by automatically tracking all listen servers. This enables workflows where you need to send commands, content, or data to every running Neovim session from the command line or external tools. Common use cases include synchronizing clipboard content across all Neovim instances, executing bulk operations, or coordinating editor state from shell scripts.
+
+`registry-nvim` is particularly useful in combination with [`nvim-auto-listen`](https://github.com/rektide/nvim-auto-listen), which will automatically open a listening socket at project root. together, these two form an easy way to find and remote control all of your neovims.
 
 ## Features
 
@@ -154,39 +156,6 @@ listen_registery = {
 
 ### Lazy.nvim Configuration
 
-**Basic Usage (No Config Needed):**
-
-Since the plugin has a plugin manifest that automatically sets up, no configuration is required:
-
-```lua
-{
-  'yourusername/registry-nvim',
-  dependencies = {
-    'folke/neoconf.nvim',
-    'nvim-lua/plenary.nvim',
-  },
-}
-```
-
-**With Custom Configuration:**
-
-If you want to customize settings like the neoconf registry key:
-
-```lua
-{
-  'yourusername/registry-nvim',
-  dependencies = {
-    'folke/neoconf.nvim',
-    'nvim-lua/plenary.nvim',
-  },
-  opts = {
-    listen_registry_key = "custom_registry_name",
-  },
-}
-```
-
-Or using the setup function:
-
 ```lua
 {
   'yourusername/registry-nvim',
@@ -195,9 +164,15 @@ Or using the setup function:
     'nvim-lua/plenary.nvim',
   },
   config = function()
-    require('registry-nvim').setup({
-      listen_registry_key = "custom_registry_name",
-    })
+    local registry = require('registry-nvim')
+
+    -- Basic setup
+    registry.setup()
+
+    -- Or with manual control of monitoring
+    registry.setup()
+    -- Later in your config:
+    registry.start_monitor()
   end,
 }
 ```
