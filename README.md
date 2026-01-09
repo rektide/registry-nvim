@@ -57,21 +57,27 @@ echo "Important text" | ./scripts/registry-send -r +
 
 # Only send if content matches a regex pattern
 echo "error" | ./scripts/registry-send -match "^error"
+
+# Watch clipboard and send urls to u register
+# Environment guard - only send if environment variable matches
+wl-paste -w 'sh -c "registry-send -r u -m https:// -e CLIPBOARD_STATE=data"'
 ```
 
 **Advanced Features:**
 
 ```bash
-# Environment guard - only send if environment variable matches
-export CLIPBOARD_STATE=enabled
-echo "Sensitive data" | ./scripts/registry-send -e CLIPBOARD_STATE=enabled
+# only fire if a env var matches, useful for filtering `wl-paste`
+export CLIPBOARD_STATE=data
+echo "Sensitive data" | ./scripts/registry-send --env-guard CLIPBOARD_STATE=data
 
 # Combine multiple flags
-echo "data" | ./scripts/registry-send -r + -match "^data:" -e SYNC_ENABLED=true
+echo "data" | ./scripts/registry-send --register + --match "^data:" --env-guard SYNC_ENABLED=data
 
 # Use with clipboard tools
 pbpaste | ./scripts/registry-send  # macOS
-xclip -o | ./scripts/registry-send  # Linux
+xclip -o | ./scripts/registry-send  # Linux, X11
+# Watch, wayland
+wl-paste -w 'sh -c "registry-send -r u -m https:// -e CLIPBOARD_STATE=data"'
 
 # Send file contents
 cat config.txt | ./scripts/registry-send

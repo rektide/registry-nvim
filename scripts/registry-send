@@ -9,23 +9,23 @@ CONTENT=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -r|--register)
-      REGISTER="$2"
-      if [[ ! "$REGISTER" =~ ^\" ]]; then
-        REGISTER="\"$REGISTER\""
-      fi
-      shift 2
-      ;;
-    -e|--env-guard)
-      ENV_GUARD="$2"
-      shift 2
-      ;;
-    -m|--match)
-      MATCH_PATTERN="$2"
-      shift 2
-      ;;
-    -h|--help)
-      cat <<'EOF'
+  -r | --register)
+    REGISTER="$2"
+    if [[ ! "$REGISTER" =~ ^\" ]]; then
+      REGISTER="\"$REGISTER\""
+    fi
+    shift 2
+    ;;
+  -e | --env-guard)
+    ENV_GUARD="$2"
+    shift 2
+    ;;
+  -m | --match)
+    MATCH_PATTERN="$2"
+    shift 2
+    ;;
+  -h | --help)
+    cat <<'EOF'
 Usage: registry-send [OPTIONS]
 
 Send stdin content to all Neovim sessions in the registry.
@@ -42,18 +42,18 @@ Examples:
   echo "test" | registry-send -e CLIPBOARD_STATE=enabled
   echo "important" | registry-send -match "^important"
 EOF
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $1"
-      echo "Use --help for usage"
-      exit 1
-      ;;
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1"
+    echo "Use --help for usage"
+    exit 1
+    ;;
   esac
 done
 
 if [[ -n "$ENV_GUARD" ]]; then
-  IFS='=' read -r NAME VALUE <<< "$ENV_GUARD"
+  IFS='=' read -r NAME VALUE <<<"$ENV_GUARD"
   if [[ "$NAME" == "" || "$VALUE" == "" ]]; then
     echo "Invalid env-guard format. Expected NAME=VALUE" >&2
     exit 1
@@ -110,7 +110,7 @@ while IFS= read -r SOCKET; do
     echo "✗ $SOCKET: failed to send"
     ((FAILED++))
   fi
-done <<< "$REGISTRY"
+done <<<"$REGISTRY"
 
 echo ""
 echo "Sent to $SUCCESS session(s), $FAILED failed"
