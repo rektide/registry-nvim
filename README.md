@@ -1,25 +1,86 @@
 # registry-nvim
 
-Track all Neovim listen servers across all instances.
+registry-nvim helps you coordinate multiple Neovim instances by automatically tracking all listen servers. This enables workflows where you need to send commands, content, or data to every running Neovim session from the command line or external tools. Common use cases include synchronizing clipboard content across all Neovim instances, executing bulk operations, or coordinating editor state from shell scripts.
 
 ## Features
 
-- Automatically discover and track listen servers across all Neovim instances
-- Uses `neoconf` to maintain a global registry of active listen servers
-- Automatic cleanup of stale listen sockets when new instances register
-- Modular architecture with sensible file organization
-- Built-in healthcheck for diagnostics
-- Comprehensive help documentation
+- **Automatic Discovery & Tracking**
+  - Automatically discovers all Neovim instances with listen servers
+  - Self-registration model where each instance adds itself to the registry
+  - Works across all Neovim instances on your system
+
+- **Global Registry via neoconf**
+  - Uses neoconf.nvim to maintain a persistent, global registry
+  - Registry stored under `listen_registery` key in global settings
+  - Shared across all Neovim instances with plugin installed
+
+- **Automatic Cleanup**
+  - Automatically removes stale sockets when new instances register
+  - Validates socket existence using plenary.nvim async operations
+  - Keeps registry clean without manual intervention
+
+- **CLI Tool for Content Distribution**
+  - Send stdin content to all registered Neovim instances
+  - Supports filtering with regex patterns and environment guards
+  - Choose target registers for each send operation
 
 ## Usage
 
-The plugin automatically monitors and updates the listen registry. By default, listen servers are tracked in the global `neoconf` settings under the `listen-registery` property. The registry is automatically cleaned when new instances register themselves.
+registry-nvim runs automatically when installed. Each Neovim instance registers its listen server on startup and maintains a global registry via neoconf. The registry is cleaned automatically when new instances register.
+
+### Dependencies
+
+The plugin requires these external libraries:
+
+- **neoconf.nvim** - Required for storing the listen registry in global settings
+- **plenary.nvim** - Required for async socket validation and cleanup
 
 ### Manual Commands
 
-- `:RegistryCleanup` - Manually clean up stale listen sockets from the registry
+- `:RegistryCleanup` - Manually clean up stale listen sockets from the registry (rarely needed as cleanup runs automatically)
+
+### CLI Tool: registry-send
+
+The `scripts/registry-send` script sends content from stdin to all Neovim instances in the registry. This is useful for synchronizing clipboard data, sending commands, or distributing content across all your Neovim sessions.
+
+**CLI Dependencies:**
+- `jq` - For parsing neoconf JSON configuration
+- `nvim` - For server communication with Neovim instances
+
+**Basic Usage:**
+
+```bash
+# Send text to all sessions' clipboard register
+echo "Hello from terminal" | ./scripts/registry-send
+
+# Send to a specific register
+echo "Important text" | ./scripts/registry-send -r +
+
+# Only send if content matches a regex pattern
+echo "error" | ./scripts/registry-send -match "^error"
+```
+
+**Advanced Features:**
+
+```bash
+# Environment guard - only send if environment variable matches
+export CLIPBOARD_STATE=enabled
+echo "Sensitive data" | ./scripts/registry-send -e CLIPBOARD_STATE=enabled
+
+# Combine multiple flags
+echo "data" | ./scripts/registry-send -r + -match "^data:" -e SYNC_ENABLED=true
+
+# Use with clipboard tools
+pbpaste | ./scripts/registry-send  # macOS
+xclip -o | ./scripts/registry-send  # Linux
+
+# Send file contents
+cat config.txt | ./scripts/registry-send
+```
 
 ### Programmatic Usage
+
+The Lua API provides direct access to the registry:
 
 ```lua
 local registry = require("registry-nvim")
@@ -50,32 +111,7 @@ registry.cleanup()
 
 ### Advanced Workflows
 
-**Sync clipboard from terminal:**
-
-```bash
-# Copy to all Neovim instances
-pbpaste | ./scripts/registry-send
-
-# Or with xclip on Linux
-xclip -o | ./scripts/registry-send
-```
-
-**Automated cleanup:**
-
-```lua
--- Manual cleanup (rarely needed - cleanup runs automatically)
-:RegistryCleanup
-
--- Add periodic cleanup to your config
-vim.api.nvim_create_autocmd("User", {
-  pattern = "RegistryCleanup",
-  callback = function()
-    require("registry-nvim").cleanup()
-  end,
-})
-```
-
-**Custom monitoring control:**
+**Monitoring Control:**
 
 ```lua
 -- Stop monitoring temporarily
@@ -85,6 +121,18 @@ require("registry-nvim").stop_monitor()
 
 -- Restart monitoring
 require("registry-nvim").start_monitor()
+```
+
+**Periodic Cleanup (Custom):**
+
+```lua
+-- Add additional periodic cleanup to your config
+vim.api.nvim_create_autocmd("User", {
+  pattern = "RegistryCleanup",
+  callback = function()
+    require("registry-nvim").cleanup()
+  end,
+})
 ```
 
 ## Configuration
@@ -99,7 +147,7 @@ listen_registery = {
 }
 ```
 
-### Lazy.nvim Configuration Example
+### Lazy.nvim Configuration
 
 ```lua
 {
@@ -130,7 +178,7 @@ registry-nvim uses **self-registration** to discover listen servers. Each Neovim
 
 **1. Initial Socket Detection / Registration**
 
-- Called once during plugin setup to ensure the current instance is tracked immediately
+- Called once during plugin setup to ensure current instance is tracked immediately
 - The plugin reads the current instance's listen server path from `vim.v.servername`
 - This contains the path to the Unix domain socket (e.g., `/run/user/1000/nvim.12345.sock`)
 - Only Neovim instances with listen servers are tracked
@@ -165,12 +213,6 @@ The following discovery mechanisms are **not** implemented:
 
 The current approach is simple, reliable, and requires minimal overhead, but depends on each Neovim instance having the plugin installed.
 
-## Requirements
-
-- Neovim >= 0.9.0
-- [neoconf.nvim](https://github.com/folke/neoconf.nvim)
-- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
-
 ## Installation
 
 Using [lazy.nvim](https://github.com/folke/lazy.nvim):
@@ -200,30 +242,6 @@ The plugin is organized into modular components:
 - `init.lua` - Plugin initialization
 
 ## Development
-
-### CLI Tool
-
-The `scripts/registry-send` script allows you to send content to all registered Neovim instances:
-
-```bash
-# Send text to all sessions' clipboard
-echo "Hello from terminal" | ./scripts/registry-send
-
-# Send to a specific register
-echo "Important text" | ./scripts/registry-send -r +
-
-# Only send if an environment guard matches
-export CLIPBOARD_STATE=enabled
-echo "Sensitive data" | ./scripts/registry-send -e CLIPBOARD_STATE=enabled
-
-# Use in shell scripts for clipboard synchronization
-cat file.txt | ./scripts/registry-send
-```
-
-**CLI Dependencies:**
-
-- `jq` - For parsing neoconf JSON
-- `nvim` - For server communication
 
 ### Healthcheck
 
