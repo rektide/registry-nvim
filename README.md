@@ -156,6 +156,8 @@ listen_registery = {
 
 ### Lazy.nvim Configuration
 
+**Basic Installation (No Config Needed):**
+
 ```lua
 {
   'yourusername/registry-nvim',
@@ -163,17 +165,25 @@ listen_registery = {
     'folke/neoconf.nvim',
     'nvim-lua/plenary.nvim',
   },
-  config = function()
-    local registry = require('registry-nvim')
+}
+```
 
-    -- Basic setup
-    registry.setup()
+The plugin automatically sets up via its plugin manifest and will work without any configuration.
 
-    -- Or with manual control of monitoring
-    registry.setup()
-    -- Later in your config:
-    registry.start_monitor()
-  end,
+**Custom Configuration:**
+
+If you want to customize the neoconf registry key:
+
+```lua
+{
+  'yourusername/registry-nvim',
+  dependencies = {
+    'folke/neoconf.nvim',
+    'nvim-lua/plenary.nvim',
+  },
+  opts = {
+    listen_registry_key = "custom_registry_name",
+  },
 }
 ```
 
@@ -231,11 +241,10 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
     'folke/neoconf.nvim',
     'nvim-lua/plenary.nvim',
   },
-  config = function()
-    require('registry-nvim').setup()
-  end,
 }
 ```
+
+The plugin automatically loads and sets up via its plugin manifest. See Configuration section for customization options.
 
 ## Architecture
 
