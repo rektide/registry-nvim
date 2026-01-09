@@ -35,6 +35,39 @@ The plugin requires these external libraries:
 - **neoconf.nvim** - Required for storing the listen registry in global settings
 - **plenary.nvim** - Required for async socket validation and cleanup
 
+### Lazy.nvim Configuration
+
+**Basic Installation (No Config Needed):**
+
+```lua
+{
+  'yourusername/registry-nvim',
+  dependencies = {
+    'folke/neoconf.nvim',
+    'nvim-lua/plenary.nvim',
+  },
+}
+```
+
+The plugin automatically sets up via its plugin manifest and will work without any configuration.
+
+**Custom Configuration:**
+
+If you want to customize the neoconf registry key:
+
+```lua
+{
+  'yourusername/registry-nvim',
+  dependencies = {
+    'folke/neoconf.nvim',
+    'nvim-lua/plenary.nvim',
+  },
+  opts = {
+    listen_registry_key = "custom_registry_name",
+  },
+}
+```
+
 ### Manual Commands
 
 - `:RegistryCleanup` - Manually clean up stale listen sockets from the registry (rarely needed as cleanup runs automatically)
@@ -154,39 +187,6 @@ listen_registery = {
 }
 ```
 
-### Lazy.nvim Configuration
-
-**Basic Installation (No Config Needed):**
-
-```lua
-{
-  'yourusername/registry-nvim',
-  dependencies = {
-    'folke/neoconf.nvim',
-    'nvim-lua/plenary.nvim',
-  },
-}
-```
-
-The plugin automatically sets up via its plugin manifest and will work without any configuration.
-
-**Custom Configuration:**
-
-If you want to customize the neoconf registry key:
-
-```lua
-{
-  'yourusername/registry-nvim',
-  dependencies = {
-    'folke/neoconf.nvim',
-    'nvim-lua/plenary.nvim',
-  },
-  opts = {
-    listen_registry_key = "custom_registry_name",
-  },
-}
-```
-
 ## Discovery
 
 registry-nvim uses **self-registration** to discover listen servers. Each Neovim instance registers itself when it starts, rather than actively scanning the system for running instances.
@@ -230,22 +230,6 @@ The following discovery mechanisms are **not** implemented:
 
 The current approach is simple, reliable, and requires minimal overhead, but depends on each Neovim instance having the plugin installed.
 
-## Installation
-
-Using [lazy.nvim](https://github.com/folke/lazy.nvim):
-
-```lua
-{
-  'yourusername/registry-nvim',
-  dependencies = {
-    'folke/neoconf.nvim',
-    'nvim-lua/plenary.nvim',
-  },
-}
-```
-
-The plugin automatically loads and sets up via its plugin manifest. See Configuration section for customization options.
-
 ## Architecture
 
 The plugin is organized into modular components:
@@ -274,7 +258,3 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## License
 
 MIT
-
-## Author
-
-Created to improve multi-instance Neovim workflow management.
