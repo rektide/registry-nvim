@@ -7,6 +7,8 @@ local config = require("registry-nvim.config")
 function M.setup(opts)
   opts = opts or {}
 
+  config.setup(opts)
+
   if not config.has_neoconf() then
     vim.notify("registry-nvim requires neoconf.nvim", vim.log.levels.ERROR)
     return M

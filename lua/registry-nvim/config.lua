@@ -6,6 +6,13 @@ local config = {
   listen_registry_key = "listen_registery",
 }
 
+function M.setup(opts)
+  opts = opts or {}
+  if opts.listen_registry_key then
+    config.listen_registry_key = opts.listen_registry_key
+  end
+end
+
 function M.has_neoconf()
   return has_neoconf
 end
